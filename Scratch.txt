@@ -1,0 +1,140 @@
+//Use this in html files within JS script to create a popup
+
+
+
+        function displayDialog(event) {
+
+            if (Office.context.requirements.isSetSupported('DialogApi', 1.1)) {
+                // Use Office UI methods;
+                Office.context.ui.displayDialogAsync("https://optimuspowerpoint.mybluemix.net",
+                {height: 60, width: 40},
+                function (result) {
+
+                    dialog = result.value;
+                    dialog.addEventHandler(Microsoft.Office.WebExtension.EventType.DialogEventReceived, processMessage);
+                    //processMessage is a function that gets called when the dialog box is closed
+
+                    event.completed();
+
+                });
+
+
+            }
+
+
+        }
+
+
+
+//Use this in manifest file to create dropdown menu
+                                <!-- Menu example -->
+                                <Control xsi:type="Menu" id="IBM.Menu">
+                                    <Label resid="IBM.Dropdown.Label" />
+                                    <Supertip>
+                                        <Title resid="IBM.Dropdown.Label" />
+                                        <Description resid="IBM.Dropdown.Tooltip" />
+                                    </Supertip>
+                                    <Icon>
+                                        <bt:Image size="16" resid="IBM.TaskpaneButton.Icon" />
+                                        <bt:Image size="32" resid="IBM.TaskpaneButton.Icon" />
+                                        <bt:Image size="80" resid="IBM.TaskpaneButton.Icon" />
+                                    </Icon>
+                                    <Items>
+                                        <Item id="IBM.Menu.Item1">
+                                            <Label resid="IBM.Item1.Label"/>
+                                            <Supertip>
+                                                <Title resid="IBM.Item1.Label" />
+                                                <Description resid="IBM.Item1.Tooltip" />
+                                            </Supertip>
+                                            <Icon>
+                                                <bt:Image size="16" resid="IBM.TaskpaneButton.Icon" />
+                                                <bt:Image size="32" resid="IBM.TaskpaneButton.Icon" />
+                                                <bt:Image size="80" resid="IBM.TaskpaneButton.Icon" />
+                                            </Icon>
+                                            <Action xsi:type="ShowTaskpane">
+                                                <TaskpaneId>MyTaskPaneID1</TaskpaneId>
+                                                <SourceLocation resid="IBM.Taskpane1.Url" />
+                                            </Action>
+                                        </Item>
+
+                                        <Item id="IBM.Menu.Item2">
+                                            <Label resid="IBM.Item2.Label"/>
+                                            <Supertip>
+                                                <Title resid="IBM.Item2.Label" />
+                                                <Description resid="IBM.Item2.Tooltip" />
+                                            </Supertip>
+                                            <Icon>
+                                                <bt:Image size="16" resid="IBM.TaskpaneButton.Icon" />
+                                                <bt:Image size="32" resid="IBM.TaskpaneButton.Icon" />
+                                                <bt:Image size="80" resid="IBM.TaskpaneButton.Icon" />
+                                            </Icon>
+                                            <Action xsi:type="ShowTaskpane">
+                                                <TaskpaneId>MyTaskPaneID2</TaskpaneId>
+                                                <SourceLocation resid="IBM.Taskpane2.Url" />
+                                            </Action>
+                                        </Item>
+
+                                    </Items>
+                                </Control>
+
+
+//image conversion site
+https://www.base64-image.de/
+
+
+
+        //function used to get all slices and do whatever is in onGotAllSlices
+        function getSliceAsync(file, nextSlice, sliceCount, gotAllSlices, docDataSlices, slicesReceived) {
+            file.getSliceAsync(nextSlice, function (sliceResult) {
+                if (sliceResult.status == "succeeded") {
+                    if (!gotAllSlices) { // Failed to get all slices, no need to continue.
+                        return;
+                    }
+
+                    // Got one slice, store it in a temporary array.
+                    // (Or you can do something else, such as
+                    // send it to a third-party server.)
+                    docDataSlices[sliceResult.value.index] = sliceResult.value.data;
+                    if (++slicesReceived == sliceCount) {
+                       // All slices have been received.
+                       file.closeAsync();
+                       onGotAllSlices(docDataSlices);
+                    }
+                    else {
+                        getSliceAsync(file, ++nextSlice, sliceCount, gotAllSlices, docdataSlices, slicesReceived);
+                    }
+                }
+                    else {
+                        gotAllSlices = false;
+                        file.closeAsync();
+                        app.showNotification("getSliceAsync Error:", sliceResult.error.message);
+                    }
+            });
+        }
+
+
+
+        function savePDF(event) {
+            //get file as pdf
+            Office.context.document.getFileAsync(Office.FileType.Pdf,
+                function(result) {
+                    if (result.status == "succeeded") {
+                        var myFile = result.value;
+                        var sliceCount = myFile.sliceCount;
+                        app.showNotification("File size:" + myFile.size + " #Slices: " + sliceCount);
+
+                        // Now, you can call getSliceAsync to download the files, as described in the previous code segment (compressed format).
+                        getSliceAsync(myFile,0,sliceCount,true,[],0);
+
+
+                        myFile.closeAsync();
+                    }
+                    else {
+                        app.showNotification("Error:", result.error.message);
+                    }
+            }
+            );
+            event.completed();
+        }
+
+
